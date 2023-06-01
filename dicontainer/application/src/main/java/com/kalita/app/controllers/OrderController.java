@@ -43,7 +43,7 @@ public class OrderController implements HttpHandler {
     @Override
     public void handle(HttpExchange request) {
         String[] splitParams = request.getRequestURI().getQuery().split("&");
-        String username = getParamValue(splitParams,"user");
+        String username = getParamValue(splitParams, "user");
         String item = getParamValue(splitParams, "item");
         String user = userService.getUser(username);
         String result = orderService.buyItem(user, item);

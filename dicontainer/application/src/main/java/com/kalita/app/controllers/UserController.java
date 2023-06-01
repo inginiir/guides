@@ -30,6 +30,7 @@ public class UserController implements HttpHandler {
             throw new CriticalException("Logger not initialized");
         }
     }
+
     private final UserService userService;
 
     @Injected
@@ -40,7 +41,7 @@ public class UserController implements HttpHandler {
     @Override
     public void handle(HttpExchange request) {
         String[] splitParams = request.getRequestURI().getQuery().split("&");
-        String name = getParamValue(splitParams,"user");
+        String name = getParamValue(splitParams, "user");
         String response = userService.saveUser(name);
         try (OutputStream os = request.getResponseBody()) {
             request.sendResponseHeaders(200, response.length());

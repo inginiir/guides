@@ -29,7 +29,7 @@ public class ReflectionUtils {
     }
 
     public static Set<Class<?>> findComponents(Class<?> application) {
-        String packageName = obtainPackageName(application);
+        String packageName = application.getAnnotation(PackageScan.class).packageName();
         Set<Class<?>> classes = new HashSet<>();
         try {
             String path = packageName.replace(DOT, '/');
@@ -47,14 +47,8 @@ public class ReflectionUtils {
         }
         return classes.stream()
                 .filter(ReflectionUtils::isComponent)
-                .filter(definition -> !definition.isAnnotation())
+                .filter(component -> !component.isAnnotation())
                 .collect(Collectors.toSet());
-    }
-
-
-    private static String obtainPackageName(Class<?> application) {
-        PackageScan packageScan = application.getAnnotation(PackageScan.class);
-        return packageScan.packageName();
     }
 
     private static Set<Class<?>> findClasses(File directory, String packageName) throws ClassNotFoundException {
@@ -73,8 +67,8 @@ public class ReflectionUtils {
         return classes;
     }
 
-    private static boolean isComponent(Class<?> definition) {
-        return definition.isAnnotationPresent(Component.class) || Arrays.stream(definition.getAnnotations())
+    private static boolean isComponent(Class<?> clazz) {
+        return clazz.isAnnotationPresent(Component.class) || Arrays.stream(clazz.getAnnotations())
                 .anyMatch(annotation -> annotation.annotationType().isAnnotationPresent(Component.class));
     }
 }

@@ -22,7 +22,7 @@ public class Context {
     private static final String MESSAGE = "Class must contain only one constructor with @Injected annotation or just default constructor";
     private static final int PORT = 8080;
     private static final Set<Class<?>> components = new HashSet<>();
-    private static final Map<String, Object> diContainer = new HashMap<>();
+    private static final Map<String, Object> iocContainer = new HashMap<>();
 
     static {
         try (InputStream stream = Context.class.getClassLoader().getResourceAsStream("logging.properties")) {
@@ -33,7 +33,7 @@ public class Context {
         }
     }
 
-    public static void run(Class<?> application) throws IOException {
+    public static void run(Class<?> application) {
         Set<Class<?>> componentsSet = ReflectionUtils.findComponents(application);
 
         components.addAll(componentsSet);
@@ -45,7 +45,7 @@ public class Context {
 
     private static void createBeans() {
         log.info("Starting creating beans...");
-        components.stream().filter(component -> !component.isAnnotation()).forEach(component -> {
+        components.forEach(component -> {
             try {
                 resolveDependencies(component);
             } catch (Exception e) {
@@ -61,21 +61,21 @@ public class Context {
 
         Class<?>[] parameterTypes = actualConstructor.getParameterTypes();
         if (parameterTypes.length == 0) {
-            addBean(componentName, actualConstructor.newInstance());
+            iocContainer.put(componentName, actualConstructor.newInstance());
         } else {
             List<Object> params = new ArrayList<>();
             for (Class<?> parameterType : parameterTypes) {
                 Class<?> type = getType(parameterType);
                 String name = type.getSimpleName();
-                Object dependency = diContainer.get(name);
+                Object dependency = iocContainer.get(name);
                 if (dependency == null) {
                     resolveDependencies(type);
-                    params.add(diContainer.get(name));
+                    params.add(iocContainer.get(name));
                 } else {
                     params.add(dependency);
                 }
             }
-            addBean(componentName, actualConstructor.newInstance(params.toArray()));
+            iocContainer.put(componentName, actualConstructor.newInstance(params.toArray()));
         }
     }
 
@@ -93,26 +93,25 @@ public class Context {
                 .findFirst().orElseThrow();
     }
 
-
-    private static void addBean(String name, Object service) {
-        diContainer.put(name, service);
-    }
-
-    private static void startHttpServer() throws IOException {
-        List<Object> controllers = diContainer.values().stream()
+    private static void startHttpServer() {
+        List<Object> controllers = iocContainer.values().stream()
                 .filter(o -> o.getClass().isAnnotationPresent(Controller.class))
                 .toList();
         log.info("Found " + controllers.size() + " controllers");
         log.info("Starting server...");
-        HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
-        controllers.forEach(controller -> {
-            Controller annotation = controller.getClass().getAnnotation(Controller.class);
-            String path = annotation.path();
-            server.createContext(path, (HttpHandler) controller);
-            log.info("Created context for path " + path);
-        });
-        server.setExecutor(null);
-        server.start();
-        log.info("Server started on port " + PORT);
+        try {
+            HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
+            controllers.forEach(controller -> {
+                Controller annotation = controller.getClass().getAnnotation(Controller.class);
+                String path = annotation.path();
+                server.createContext(path, (HttpHandler) controller);
+                log.info("Created context for path " + path);
+            });
+            server.setExecutor(null);
+            server.start();
+            log.info("Server started on port " + PORT);
+        } catch (IOException e) {
+            log.severe("Server didn't start: " + e.getMessage());
+        }
     }
 }
