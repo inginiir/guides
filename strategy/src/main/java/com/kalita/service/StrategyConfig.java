@@ -1,4 +1,4 @@
-package com.kalita.config;
+package com.kalita.service;
 
 import com.kalita.model.RecipientType;
 import com.kalita.services.NotificationService;
