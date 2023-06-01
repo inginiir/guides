@@ -17,7 +17,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public String buyItem(String user, String item) {
         if (orderRepo.buyItem(user, item)) {
-            return "Oder '" + item + "' by user " + user + " successfully created";
+            return "Order '" + item + "' by user " + user + " successfully created";
         } else {
             return "Error while creating an order";
         }

@@ -12,9 +12,10 @@ import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+
+import static com.kalita.app.utils.RequestUtils.getParamValue;
 
 
 @Controller(path = "/buy")
@@ -41,19 +42,15 @@ public class OrderController implements HttpHandler {
 
     @Override
     public void handle(HttpExchange request) {
-        String query = request.getRequestURI().getQuery();
-        String[] split = query.split("&");
-        String username = Arrays.stream(split).filter(s -> s.startsWith("user="))
-                .findFirst().orElseThrow().substring(query.indexOf("=") + 1);
+        String[] splitParams = request.getRequestURI().getQuery().split("&");
+        String username = getParamValue(splitParams,"user");
+        String item = getParamValue(splitParams, "item");
         String user = userService.getUser(username);
-        String item = Arrays.stream(split).filter(s -> s.startsWith("item="))
-                .findFirst().orElseThrow().substring(query.indexOf("=") + 1);
         String result = orderService.buyItem(user, item);
         try (OutputStream os = request.getResponseBody()) {
             request.sendResponseHeaders(200, result.length());
             os.write(result.getBytes());
         } catch (IOException e) {
-            e.printStackTrace();
             log.severe("Something went wrong: " + e.getMessage());
         }
     }

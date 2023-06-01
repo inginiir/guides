@@ -14,6 +14,8 @@ import java.io.OutputStream;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import static com.kalita.app.utils.RequestUtils.getParamValue;
+
 
 @Controller(path = "/save")
 public class UserController implements HttpHandler {
@@ -37,8 +39,9 @@ public class UserController implements HttpHandler {
 
     @Override
     public void handle(HttpExchange request) {
-        String query = request.getRequestURI().getQuery();
-        String response = userService.saveUser(query.substring(query.indexOf("=") + 1));
+        String[] splitParams = request.getRequestURI().getQuery().split("&");
+        String name = getParamValue(splitParams,"user");
+        String response = userService.saveUser(name);
         try (OutputStream os = request.getResponseBody()) {
             request.sendResponseHeaders(200, response.length());
             os.write(response.getBytes());
